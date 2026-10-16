@@ -1,0 +1,29 @@
+name: tpch_kimball
+version: "1.0.0"
+config-version: 2
+
+profile: tpch_kimball
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+snapshot-paths: ["snapshots"]
+macro-paths: ["macros"]
+
+clean-targets: ["target", "dbt_packages", "logs"]
+
+flags:
+  send_anonymous_usage_stats: false
+
+vars:
+  # Upper bound for open-ended SCD2 rows
+  scd_high_date: "9999-12-31"
+
+models:
+  tpch_kimball:
+    staging:
+      +schema: staging
+      +materialized: view
+    marts:
+      +schema: marts
+      +materialized: table

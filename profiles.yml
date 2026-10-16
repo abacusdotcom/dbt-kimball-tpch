@@ -1,0 +1,8 @@
+# Kept in the repo so reviewers and CI need no setup. Run dbt with --profiles-dir .
+tpch_kimball:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: tpch.duckdb
+      threads: 4

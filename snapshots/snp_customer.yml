@@ -1,0 +1,13 @@
+snapshots:
+  - name: snp_customer
+    description: >
+      SCD Type 2 history of customers. The timestamp strategy uses the source's
+      business-effective updated_at, so validity windows sit on the business
+      timeline (1992-1998), not on the date the snapshot happened to run.
+      Reads the raw source directly: snapshots belong on the rawest stable input.
+    relation: source('tpch', 'customer')
+    config:
+      schema: snapshots
+      unique_key: c_custkey
+      strategy: timestamp
+      updated_at: updated_at

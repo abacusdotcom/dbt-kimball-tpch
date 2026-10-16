@@ -1,0 +1,27 @@
+version: 2
+
+sources:
+  - name: tpch
+    description: TPC-H sample data loaded by scripts/load_raw.py
+    schema: raw
+    tables:
+      - name: customer
+        description: Customer master. updated_at is the business-effective date of the latest change.
+        columns:
+          - name: c_custkey
+            data_tests: [unique, not_null]
+      - name: orders
+        columns:
+          - name: o_orderkey
+            data_tests: [unique, not_null]
+      - name: lineitem
+      - name: part
+        columns:
+          - name: p_partkey
+            data_tests: [unique, not_null]
+      - name: supplier
+        columns:
+          - name: s_suppkey
+            data_tests: [unique, not_null]
+      - name: nation
+      - name: region

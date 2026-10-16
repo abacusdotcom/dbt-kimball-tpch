@@ -1,0 +1,88 @@
+version: 2
+
+models:
+  - name: fct_order_lines
+    description: >
+      Sales fact. Grain: one row per order line. Customer key is resolved
+      point-in-time against the SCD2 customer dimension.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [order_id, line_number]
+    columns:
+      - name: order_line_sk
+        description: Surrogate key, hash of order_id + line_number
+        data_tests: [unique, not_null]
+      - name: customer_sk
+        description: Customer version valid on the order date
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_sk
+      - name: part_sk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_part')
+                field: part_sk
+      - name: supplier_sk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_supplier')
+                field: supplier_sk
+      - name: order_date_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+      - name: net_amount
+        description: extended_price x (1 - discount)
+
+  - name: dim_customer
+    description: >
+      Customer dimension, SCD Type 2. One row per customer version.
+      Tracked attributes: market_segment, nation_name, region_name.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [customer_id, valid_from]
+    columns:
+      - name: customer_sk
+        description: Surrogate key, hash of customer_id + valid_from
+        data_tests: [unique, not_null]
+      - name: customer_id
+        description: Business key from the source system
+        data_tests: [not_null]
+      - name: market_segment
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [AUTOMOBILE, BUILDING, FURNITURE, HOUSEHOLD, MACHINERY]
+      - name: is_current
+        description: True for the latest version of each customer
+
+  - name: dim_part
+    description: Part dimension, SCD Type 1.
+    columns:
+      - name: part_sk
+        data_tests: [unique, not_null]
+
+  - name: dim_supplier
+    description: Supplier dimension, SCD Type 1.
+    columns:
+      - name: supplier_sk
+        data_tests: [unique, not_null]
+
+  - name: dim_date
+    description: Calendar dimension, one row per day 1992-1998.
+    columns:
+      - name: date_key
+        description: Smart key YYYYMMDD
+        data_tests: [unique, not_null]

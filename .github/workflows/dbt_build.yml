@@ -1,0 +1,54 @@
+name: dbt build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dbt + DuckDB
+        run: pip install -r requirements.txt
+
+      - name: Load TPC-H into raw
+        run: python scripts/load_raw.py --sf 0.1
+
+      - name: Initial build (snapshot, models, tests)
+        run: dbt build --profiles-dir .
+
+      - name: "Event 1: segment changes effective 1995-07-01"
+        run: python scripts/simulate_changes.py --event segment
+
+      - name: Rebuild, capturing version 2
+        run: dbt build --profiles-dir .
+
+      - name: "Event 2: nation changes effective 1996-01-01"
+        run: python scripts/simulate_changes.py --event nation
+
+      - name: Rebuild, capturing version 3 (SCD2 history must still pass every test)
+        run: dbt build --profiles-dir .
+
+      - name: Show customers with history
+        run: |
+          dbt compile --profiles-dir . --select customer_history_example
+          python -c "import duckdb, glob; sql = open(glob.glob('target/compiled/**/customer_history_example.sql', recursive=True)[0]).read(); print(duckdb.connect('tpch.duckdb', read_only=True).sql(sql))"
+
+      - name: Generate docs
+        run: dbt docs generate --profiles-dir .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dbt-docs
+          path: |
+            target/index.html
+            target/manifest.json
+            target/catalog.json
